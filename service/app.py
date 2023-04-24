@@ -1,33 +1,30 @@
-from flask import Flask, request, jsonify, make_response
-from flask_restplus import Api, Resource, fields
-from sklearn.externals import joblib
+from flask import Flask, request, make_response, jsonify
+from flask_restx import Api, Resource, fields
+import joblib
 
 flask_app = Flask(__name__)
 app = Api(app = flask_app, 
-		  version = "1.0", 
-		  title = "ML React App", 
-		  description = "Predict results using a trained model")
+			version = "1.0", 
+			title = "ML React App", 
+			description = "Predict results using a trained model")
 
 name_space = app.namespace('prediction', description='Prediction APIs')
 
 model = app.model('Prediction params', 
-				  {'textField1': fields.String(required = True, 
-				  							   description="Text Field 1", 
-    					  				 	   help="Text Field 1 cannot be blank"),
-				  'textField2': fields.String(required = True, 
-				  							   description="Text Field 2", 
-    					  				 	   help="Text Field 2 cannot be blank"),
-				  'select1': fields.Integer(required = True, 
-				  							description="Select 1", 
-    					  				 	help="Select 1 cannot be blank"),
-				  'select2': fields.Integer(required = True, 
-				  							description="Select 2", 
-    					  				 	help="Select 2 cannot be blank"),
-				  'select3': fields.Integer(required = True, 
-				  							description="Select 3", 
-    					  				 	help="Select 3 cannot be blank")})
+				  {'start_latitude': fields.Float(required = True, 
+				  							   description="start_latitude", 
+    					  				 	   help="Start Latitude cannot be blank"),
+				  'start_longitude': fields.Float(required = True, 
+				  							   description="start_longitude", 
+    					  				 	   help="start Longitude cannot be blank"),
+				  'destination_latitude': fields.Float(required = True, 
+				  							description="destination_latitude", 
+    					  				 	help="Destination Latitude cannot be blank"),
+				  'destination_longitude': fields.Float(required = True, 
+				  							description="destination_longitude", 
+    					  				 	help="Destination Longitude cannot be blank")})
 
-# classifier = joblib.load('classifier.joblib')
+classifier = joblib.load('classifier.joblib')
 
 @name_space.route("/")
 class MainClass(Resource):
@@ -40,15 +37,18 @@ class MainClass(Resource):
 		return response
 
 	@app.expect(model)		
+	
 	def post(self):
 		try: 
 			formData = request.json
 			data = [val for val in formData.values()]
-			# prediction = classifier.predict(data)
+			print('Data received on backend::',data)
+			prediction = classifier.predict(np.array(data).reshape(1, -1))
+			types = { 0: "Iris Setosa", 1: "Iris Versicolour ", 2: "Iris Virginica"}
 			response = jsonify({
 				"statusCode": 200,
 				"status": "Prediction made",
-				"result": "Prediction: " + str(data)
+				"result": "The type of iris plant is: " + types[prediction[0]]
 				})
 			response.headers.add('Access-Control-Allow-Origin', '*')
 			return response

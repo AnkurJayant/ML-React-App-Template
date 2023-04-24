@@ -1,43 +1,55 @@
-import React, { Component } from 'react';
 import './App.css';
-import Form from 'react-bootstrap/Form';
-import Col from 'react-bootstrap/Col';
-import Container from 'react-bootstrap/Container';
-import Row from 'react-bootstrap/Row';
-import Button from 'react-bootstrap/Button';
 import 'bootstrap/dist/css/bootstrap.css';
+import LocationField from './Components/LocationField';
+import React, { useState,useEffect } from 'react';
+import { Container, Form, Col, Row, Button } from 'react-bootstrap';
 
-class App extends Component {
+function App() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    start:'',
+    destination:'',
+    start_latitude:'',
+    start_longitude:'',
+    destination_latitude:'',
+    destination_longitude:''
+  });
+  const [result, setResult] = useState("");
+  
 
-  constructor(props) {
-    super(props);
+  useEffect(() => {
+    
+    if (formData.start&& !formData.start.includes('New York')) {
+      window.alert('Please select an NYC location!')
+      setFormData(prevState => ({
+        ...prevState,
+        start: '',
+        start_longitude:'',
+        start_latitude:''
+      }));
 
-    this.state = {
-      isLoading: false,
-      formData: {
-        textfield1: '',
-        textfield2: '',
-        select1: 1,
-        select2: 1,
-        select3: 1
-      },
-      result: ""
-    };
-  }
-
-  handleChange = (event) => {
+      if (formData.destination&& !formData.destination.includes('New York')) {
+      window.alert('Please select an NYC location!')
+      setFormData(prevState => ({
+        ...prevState,
+        destination: '',
+        destination_longitude:'',
+        destination_latitude:''
+      }));
+      }
+    }
+  }, [formData])
+  
+  const handleChange = (event) => {
     const value = event.target.value;
     const name = event.target.name;
-    var formData = this.state.formData;
-    formData[name] = value;
-    this.setState({
-      formData
-    });
+    setFormData(prevState => ({ ...prevState, [name]: value }));
   }
 
-  handlePredictClick = (event) => {
-    const formData = this.state.formData;
-    this.setState({ isLoading: true });
+  const handlePredictClick = (event) => {
+    setIsLoading(true);
+    const altitudes=[formData.start_latitude,formData.start_longitude,formData.destination_latitude,formData.destination_longitude]
+    console.log(altitudes)
     fetch('http://127.0.0.1:5000/prediction/', 
       {
         headers: {
@@ -45,101 +57,46 @@ class App extends Component {
           'Content-Type': 'application/json'
         },
         method: 'POST',
-        body: JSON.stringify(formData)
+        body: JSON.stringify(altitudes)
       })
       .then(response => response.json())
       .then(response => {
-        this.setState({
-          result: response.result,
-          isLoading: false
-        });
+        setResult(response.result);
+        setIsLoading(false);
       });
   }
 
-  handleCancelClick = (event) => {
-    this.setState({ result: "" });
+  const handleCancelClick = (event) => {
+    setResult("");
   }
 
-  render() {
-    const isLoading = this.state.isLoading;
-    const formData = this.state.formData;
-    const result = this.state.result;
+  return (
+    <Container>
+      {console.log(formData)}
+      <div>
+        <h1 className="title">Get your Taxi Fare now!</h1>
+      </div>
+      <div className="content">
+        <Form>
+          <Form.Row>
+            <Form.Group as={Col}>
+              <Form.Label>Start address</Form.Label>
+              <LocationField value={'Where do you want to start?'} setFormData={setFormData} name='start' />
+            </Form.Group>
+            <Form.Group as={Col}>
+              <Form.Label>Destination address</Form.Label>
+              <LocationField value={'Where do you want to go?'}setFormData={setFormData} name='destination' />
 
-    return (
-      <Container>
-        <div>
-          <h1 className="title">ML React App</h1>
-        </div>
-        <div className="content">
-          <Form>
-            <Form.Row>
-              <Form.Group as={Col}>
-                <Form.Label>Text Field 1</Form.Label>
-                <Form.Control 
-                  type="text" 
-                  placeholder="Text Field 1" 
-                  name="textfield1"
-                  value={formData.textfield1}
-                  onChange={this.handleChange} />
-              </Form.Group>
-              <Form.Group as={Col}>
-                <Form.Label>Text Field 2</Form.Label>
-                <Form.Control 
-                  type="text" 
-                  placeholder="Text Field 2" 
-                  name="textfield2"
-                  value={formData.textfield2}
-                  onChange={this.handleChange} />
-              </Form.Group>
-            </Form.Row>
-            <Form.Row>
-              <Form.Group as={Col}>
-                <Form.Label>Select 1</Form.Label>
-                <Form.Control 
-                  as="select"
-                  value={formData.select1}
-                  name="select1"
-                  onChange={this.handleChange}>
-                  <option>1</option>
-                  <option>2</option>
-                  <option>3</option>
-                  <option>4</option>
-                </Form.Control>
-              </Form.Group>
-              <Form.Group as={Col}>
-                <Form.Label>Select 2</Form.Label>
-                <Form.Control 
-                  as="select"
-                  value={formData.select2}
-                  name="select2"
-                  onChange={this.handleChange}>
-                  <option>1</option>
-                  <option>2</option>
-                  <option>3</option>
-                  <option>4</option>
-                </Form.Control>
-              </Form.Group>
-              <Form.Group as={Col}>
-                <Form.Label>Select 3</Form.Label>
-                <Form.Control 
-                  as="select"
-                  value={formData.select3}
-                  name="select3"
-                  onChange={this.handleChange}>
-                  <option>1</option>
-                  <option>2</option>
-                  <option>3</option>
-                  <option>4</option>
-                </Form.Control>
-              </Form.Group>
-            </Form.Row>
+            </Form.Group>
+          </Form.Row>
+
             <Row>
               <Col>
                 <Button
                   block
                   variant="success"
                   disabled={isLoading}
-                  onClick={!isLoading ? this.handlePredictClick : null}>
+                  onClick={!isLoading ? handlePredictClick : null}>
                   { isLoading ? 'Making prediction' : 'Predict' }
                 </Button>
               </Col>
@@ -148,7 +105,7 @@ class App extends Component {
                   block
                   variant="danger"
                   disabled={isLoading}
-                  onClick={this.handleCancelClick}>
+                  onClick={handleCancelClick}>
                   Reset prediction
                 </Button>
               </Col>
@@ -165,6 +122,6 @@ class App extends Component {
       </Container>
     );
   }
-}
+
 
 export default App;
